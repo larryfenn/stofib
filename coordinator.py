@@ -12,7 +12,10 @@ def checkCond(u_method, **kwargs):
 #    print kwargs
 
     if u_method is 'gradient':
-        if kwargs['f'] < kwargs['constraint']:
+        if kwargs['f'] == -1 or kwargs['gradient'] == -1:
+            output['stop'] = True
+            output['result'] = False
+        elif kwargs['f'] < kwargs['constraint']:
             output['stop'] = True
             output['result'] = True
         elif abs(kwargs['gradient']) < kwargs['epsilon']:
@@ -54,8 +57,8 @@ def trial(**kwargs):
     init_a = 0
     init_b = 1
     constraint = 3
-    y0 = 1
-    y1 = 129
+    y0 = 65
+    y1 = 97
 
     # bayesian discrete probability structure
     pdf = [0] * (y1 + 1)
@@ -117,9 +120,16 @@ def trial(**kwargs):
     error = b_error
     cpustart = timeit.default_timer()
     itercount = 0
+    old_y = 0
+    bayescount = 0
     while not outer_stop:
         if b_method is 'bayes':
             y = find_median(y0, y1, pdf)
+            if y == old_y:
+                bayescount += 1
+            else:
+                bayescount = 0
+            old_y = y
         if b_method is 'bisect':
             alpha = 1 - error
             y = (left + right)/2
@@ -172,12 +182,12 @@ def trial(**kwargs):
             stop = cond['stop']
             condtime += cond['time']
 
-    #    if u_method is 'golden':
-    #        print str(y) + ": " + str(f_c) + " " + str(f_d) + " " + str(a) + " " + str(b)
-    #    if u_method is 'gradient':
-    #        print str(y) + ": " + str(optresult['f']) + " " + str(x)
+        if u_method is 'golden':
+            print str(y) + ": " + str(f_c) + " " + str(f_d) + " " + str(a) + " " + str(b)
+        if u_method is 'gradient':
+            print str(y) + ": " + str(optresult['f']) + " " + str(x)
 
-    #    print cond['result']
+        print cond['result']
         # ***
 
         if b_method is 'bayes':
@@ -197,7 +207,7 @@ def trial(**kwargs):
             for i in range(y0, y1 + 1):
                 pdf[i] *= scalefactor
 #            print max(pdf)
-            if max(pdf) > certainty:
+            if max(pdf) > certainty or bayescount > 25:
                 outer_stop = True
                 final['y'] = pdf.index(max(pdf))
 
@@ -251,21 +261,23 @@ def trial(**kwargs):
 # 3. Golden section + Bayesian
 # 4. Golden section + Bisect
 range_sim_n = [10, 50, 100, 500, 1000, 5000, 10000, 50000]
-range_alpha = [.5, .6, .7, .8, .9]
+range_alpha = [.6, .75, .9]
 range_gs_epsilon = [.1, .01, .001]
-range_delta = [.1, .01, .001]
+range_delta = [.1, .01]
 range_sim_grad_n = [10, 50, 100, 500, 1000, 5000, 10000, 50000]
 range_grad_epsilon = [.1, .01, .001]
 range_stepsize = [.5, .1, .05]
 range_b_error = [.1, .2, .3]
 range_oracle = [.6, .7, .8, .9]
-range_certainty = [.9, .99, .999]
+range_certainty = [.7, .9]
 range_u_method = ['golden', 'gradient']
-range_b_method = ['bayes', 'bisect']
+range_b_method = ['bisect', 'bayes']
 
 with open('records.csv', 'wb') as f:
+    f.write("u_method,b_method,solution,iterations,simtime,optime,condtime,btime,sim_n,alpha,gs_epsilon,delta,sim_grad_n,grad_epsilon,stepsize,b_error,oracle,certainty\n")
     for sim_n, alpha, gs_epsilon, delta, sim_grad_n, grad_epsilon, stepsize, b_error, oracle, certainty, u_method, b_method in itertools.product(range_sim_n, range_alpha, range_gs_epsilon, range_delta, range_sim_grad_n, range_grad_epsilon, range_stepsize, range_b_error, range_oracle, range_certainty, range_u_method, range_b_method):
         for i in range(10):
+            print "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
             rowdata = trial(sim_n=sim_n,
                             alpha=alpha,
                             gs_epsilon=gs_epsilon,
@@ -280,12 +292,12 @@ with open('records.csv', 'wb') as f:
                             b_method=b_method)
             f.write(u_method + ',' +
                     b_method + ',' +
-                    rowdata['y'] + ',' +
-                    rowdata['itercount'] + ',' +
-                    rowdata['simtime'] + ',' +
-                    rowdata['opttime'] + ',' +
-                    rowdata['condtime'] + ',' +
-                    rowdata['btime'] + ',' +
+                    str(rowdata['y']) + ',' +
+                    str(rowdata['itercount']) + ',' +
+                    str(rowdata['simtime']) + ',' +
+                    str(rowdata['optime']) + ',' +
+                    str(rowdata['condtime']) + ',' +
+                    str(rowdata['btime']) + ',' +
                     str(sim_n) + ',' +
                     str(alpha) + ',' +
                     str(gs_epsilon) + ',' +
@@ -296,3 +308,14 @@ with open('records.csv', 'wb') as f:
                     str(b_error) + ',' +
                     str(oracle) + ',' +
                     str(certainty) + '\n')
+
+
+
+
+
+
+
+
+
+
+
