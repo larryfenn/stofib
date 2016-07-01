@@ -6,9 +6,9 @@ Compare these two:
 ### Golden section search
 
 ## At the discrete level
-## Bisection search with backtracking
-## Bayesian bisection search using the fixed probability measure from the GSS step.
+Compare these two:
+### Bisection search with backtracking
+### Bayesian bisection search using the fixed probability measure from the GSS step.
 
-## Put together:
-### Compare all four
-# stofib
+# Use
+Run file; output data will be stuck into "records.csv"
